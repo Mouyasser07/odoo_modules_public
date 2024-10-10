@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo>
+    <data>
+        <record id="dynamic_snippet_builder_tree_view" model="ir.ui.view">
+            <field name="name">dynamic.snippet.builder.tree</field>
+            <field name="model">dynamic.snippet.builder</field>
+            <field name="arch" type="xml">
+                <tree>
+                    <field name="name"/>
+                    <field name="model_id"/>
+                    <field name="field_ids" widget="many2many_tags"/>
+                    <field name="theme"/>
+                </tree>
+            </field>
+        </record>
+
+        <record id="dynamic_snippet_builder_form_view" model="ir.ui.view">
+            <field name="name">dynamic.snippet.builder.form</field>
+            <field name="model">dynamic.snippet.builder</field>
+            <field name="arch" type="xml">
+                <form>
+                    <sheet>
+                        <group>
+                            <group name="main_group">
+                                <field name="name"/>
+                                <field name="model_id"/>
+                                <field name="field_ids" widget="many2many_tags"/>
+                                <field name="theme"/>
+                            </group>
+                            <group name="secondary_group">
+                                <label for="filter_id" string="Filter"/>
+                                <div class="o_row">
+                                    <field name="filter_id"/>
+                                    <button id="stock.view_diagram_button" string="Create Filter" type="object"
+                                            name="action_view_filters" icon="oi-arrow-right"
+                                            class="btn btn-link pt-0"/>
+                                </div>
+<!--                                <field name="snippet_preview"/>-->
+                            </group>
+                        </group>
+                    </sheet>
+                </form>
+            </field>
+        </record>
+    </data>
+
+
+</odoo>

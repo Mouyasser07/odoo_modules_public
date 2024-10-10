@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo>
+    <record id="action_snippet_list" model="ir.actions.act_window">
+        <field name="name">Snippets</field>
+        <field name="res_model">dynamic.snippet.builder</field>
+        <field name="view_mode">tree,form</field>
+        <field name="view_id" ref="dynamic_snippet_builder_tree_view"/>
+        <field name="target">current</field>
+    </record>
+
+    <menuitem name="Snippets"
+              id="menu_website_snippets_list"
+              action="action_snippet_list"
+              parent="website.menu_website_global_configuration"
+              groups="base.group_no_one"
+              sequence="20"
+    />
+
+</odoo>
