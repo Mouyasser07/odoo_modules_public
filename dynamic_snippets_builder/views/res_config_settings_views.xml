@@ -3,8 +3,8 @@
     <record id="action_snippet_list" model="ir.actions.act_window">
         <field name="name">Snippets</field>
         <field name="res_model">dynamic.snippet.builder</field>
-        <field name="view_mode">tree,form</field>
-        <field name="view_id" ref="dynamic_snippet_builder_tree_view"/>
+        <field name="view_mode">list,form</field>
+        <field name="view_id" ref="dynamic_snippet_builder_list_view"/>
         <field name="target">current</field>
     </record>
 

@@ -1,17 +1,18 @@
-/* @odoo-module */
-import PublicWidget from "@web/legacy/js/public/public_widget";
-import { jsonrpc } from "@web/core/network/rpc_service";
-import { renderToElement } from "@web/core/utils/render";
+/** @odoo-module **/
+import publicWidget from "@web/legacy/js/public/public_widget";
+import { rpc } from "@web/core/network/rpc";
 
 
 export function _get_selectors() {
     const selectors = [];
     const elem = document.getElementsByClassName("container template ");
-    console.log("elem= ",elem)
+//    console.log("elem= ",elem)
     if (elem.length > 0){
-        console.log("selector = ",elem[0].offsetParent.dataset.snippet)
+//        console.log("selector = ",elem[0].offsetParent.dataset.snippet)
+        const elemParent = document.getElementsByClassName("container template ");
         for (let i = 0; i < elem.length; i++) {
-            selectors.push(elem[i].offsetParent.dataset.snippet);
+            selectors.push([elem[i].offsetParent.dataset.snippet]);
+//            console.log("selector= ",elem[i].offsetParent.dataset.snippet)
         }
     }
     return selectors;
@@ -24,45 +25,163 @@ export function _chunk(array, size) {
     }
     return result;
 }
-//for (let i = 0; i < selectors.length; i++ ){
+
 var selectors = _get_selectors()
-console.log("selectors = ",selectors)
-    if(selectors.length > 0 ){
-    var dynamicSnippet = PublicWidget.Widget.extend(
-            {
-            selector: '.'+selectors[0],
-            template:'dynamic_snippets_builder.'+selectors[0],
+
+if(selectors.length > 0 ){
+    var dynamic_snippets = [];
+    for (var s = 0; s < selectors.length; s++) {
+//        console.log("selector s : " + selectors[s])
+        let dynamic_snippet = publicWidget.Widget.extend({
+            selector: '.'+selectors[s],
             init() {
                 this._super(...arguments);
-                console.log("init called");
-                this.rpc = this.bindService("rpc");
+                this.rpc = rpc;
+                console.log("init called")
             },
-            async willStart() {
-                console.log("will start called");
-                await this._super(...arguments);
-                this.snippet = await this.rpc("/create_dynamic_snippet/"+selectors[0].split("_")[3]);
-                console.log("snippet = ", this.snippet)
-            },
-            async start() {
+            start() {
                 console.log("start called");
-                this.snippetElement = renderToElement(this.template);
-                console.log('result of controller call = ',this.snippetElement);
-//                const refEl = this.$el.find("#dynamic_snippet_carousel")
-//                const { data, current_website_id} = this
-//                const chunkData = chunk(data, 4)
-//                refEl.html(renderToElement(dynamic_snippets_builder.dynamic_snippet, {
-//                    data,
-//                    current_website_id,
-//                    chunkData
-//                }))
-            },
-            destroy() {
-                this.snippetElement.remove();
+                let className = this.el.lastElementChild.className;
+//                console.log(className)
+//                console.log(this.el.lastElementChild)
+                if(className == 'dynamic_snippet_card'){
+                    let dynamic_html = this.el.lastElementChild;
+                    let dynamic_snippet_id = this.selector[this.selector.length-1]
+                    this.rpc('/create_dynamic_snippet/'+dynamic_snippet_id, {}).then(json_data=>{
+                        var keys = Object.keys(json_data[0]);
+                        let i=0;
+                        const image_position = keys.findIndex((e)=>e.toLowerCase().includes('image'));
+                        // permute image if found to the first position
+                        if (image_position >= 0 ){
+                            const alt = keys[i];
+                            keys[i] = keys[image_position];
+                            keys[image_position] = alt;
+                            i++;
+                        }
+                        const id_position = keys.findIndex((e)=>e.toLowerCase()=='id');
+                        // permute id if found to the second position
+                        if (id_position >= 0 ){
+                            const alt = keys[i];
+                            keys[i] = keys[id_position];
+                            keys[id_position] = alt;
+                            i++;
+                        }
+                        keys.forEach(function(element,index){
+                            // permute strings containing 'name'
+                            if (element.toLowerCase().includes('name')){
+                                const alt = keys[i];
+                                keys[i] = keys[index];
+                                keys[index] = alt;
+                                i++;
+                            }
+                        });
+                        // Create new html to inject it into the snippet
+                        let html=`<div style="margin-left: 10%;margin-right: 10%;display: flex;flex-wrap: wrap;justify-content: space-between;">`;
+                        json_data.forEach(function(d){
+
+                            html += `<div class="card mb-3" id="card-width">
+                                        <div class="row g-0">`;
+
+                            keys.forEach(function(k){
+                            if (k.includes('image')){
+                                html += `<div class="col-md-4">
+                                            <img src="data:image/png;base64,${d[k]}" class="card-img" style="width:80%;margin: 9%;">
+                                        </div>`;
+                            }
+                            else if (k.includes('name')){
+                                html += `<h5 class="card-title">${d[k]}</h5>`;
+                            }
+                            else if (k == 'id'){
+                                html += `<div class="col-md-8">
+                                            <div class="card-body">`
+                            }
+                            else {
+                                html += `<p class="card-text" style ="text-overflow: ellipsis;">${d[k]} </p>`
+                            }
+                            });
+
+                            html +=  `          </div>
+                                            </div>
+                                        </div>
+                                      </div>`;
+                            });
+                            html += `</div>`
+                        dynamic_html.innerHTML = html;
+                    })
+                }
+                else if (className == 'dynamic_snippet_table'){
+                    let dynamic_html = this.el.lastElementChild;
+                    let dynamic_snippet_id = this.selector[this.selector.length-1]
+                    this.rpc('/create_dynamic_snippet/'+dynamic_snippet_id, {}).then(json_data=>{
+                        var keys = Object.keys(json_data[0]);
+                        let i = 0;
+                        const image_position = keys.findIndex((e)=>e.toLowerCase().includes('image'));
+                        // permute image if found to the first position
+                        if (image_position >= 0 ){
+                            const alt = keys[i];
+                            keys[i] = keys[image_position];
+                            keys[image_position] = alt;
+                            i++;
+                        }
+                        const id_position = keys.findIndex((e)=>e.toLowerCase()=='id');
+                        // permute id if found to the second position
+                        if (id_position >= 0 ){
+                            const alt = keys[i];
+                            keys[i] = keys[id_position];
+                            keys[id_position] = alt;
+                            i++;
+                        }
+                        const name_position = keys.findIndex((e)=>e.toLowerCase().includes('name'));
+                        // permute name if found to the second position
+                        if (name_position >= 0 ){
+                            const alt = keys[i];
+                            keys[i] = keys[name_position];
+                            keys[name_position] = alt;
+                            i++;
+                        }
+                        // Create new html to inject it into the snippet
+                        let html=`<div style="margin-left: 10%;margin-right: 10%;width: 80%;">
+                                    <table class="table table-striped">
+                                                    <thead>
+                                                        <tr>`;
+                        keys.forEach(function(k){
+                            if (k !='id'){
+                                html += `<th scope="col">${k}</th>`
+                            }
+                        })
+                        html += `   </tr>
+                                 </thead>
+                                 <tbody>`
+                        json_data.forEach(function(d){
+
+                            html += `<tr>`;
+
+                            keys.forEach(function(k){
+                                if (k.includes('image')){
+                                    html += `<td class="w-25">
+                                                <img id="table-img-width" src="data:image/png;base64,${d[k]}">
+                                            </td>`;
+                                }
+                                else if (k != 'id'){
+                                    html += `<td>${d[k]}</td>`
+                                }
+                            });
+
+                            html +=  `</tr>`;
+                            });
+                            html += `       </tbody>
+                                        </table>
+                                     </div>`
+                        dynamic_html.innerHTML = html;
+                    })
+                }
             }
         });
-
-    PublicWidget.registry.DynamicSnippetsBuilder = dynamicSnippet;
-    export default PublicWidget.registry.DynamicSnippetsBuilder;
+        let id_snippet = selectors[s][selectors[s].length-1]
+        let registry_name = "DynamicSnippet"+ id_snippet
+        publicWidget.registry[registry_name] =dynamic_snippet
+        export default publicWidget.registry[registry_name];
     }
-//}
-//return DynamicSnippet;
+
+}
+
