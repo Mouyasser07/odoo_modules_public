@@ -36,6 +36,10 @@ class DynamicSnippetsBuilder(models.Model):
         template_name = ' '.join(['Snippet builder ', self.name.lower(), str(self.id)])
         # Create the snippet template representing the dynamic snippet builder in 'ir.ui.view'
         # Define the arch_db
+        if self.group_id.get_metadata()[0].get('xmlid'):
+            group_external_id = self.group_id.get_metadata()[0].get('xmlid')
+        else:
+            group_external_id = self.group_id.export_data(['id']).get('datas')[0][0]
         if self.theme == 'card':
             arch = '''<t t-name="dynamic_snippets_builder.%s" name="%s">
                                 <section class="pt40 pb40 %s">
@@ -44,7 +48,7 @@ class DynamicSnippetsBuilder(models.Model):
                                     </div>
                                     <div class="dynamic_snippet_card"/>
                                 </section>
-                              </t>''' % (template_id, template_id, template_id, template_id, self.model_id.name)
+                              </t>''' % (template_id, template_id, group_external_id, template_id, template_id, self.model_id.name)
         else :
             arch = '''<t t-name="dynamic_snippets_builder.%s" name="%s">
                                 <section class="pt40 pb40 %s">
@@ -53,7 +57,7 @@ class DynamicSnippetsBuilder(models.Model):
                                     </div>
                                     <div class="dynamic_snippet_table"/>
                                 </section>
-                              </t>''' % (template_id, template_id, template_id, template_id, self.model_id.name)
+                              </t>''' % (template_id, template_id, group_external_id, template_id, template_id, self.model_id.name)
         # snippet_view_id = self.env['ir.ui.view'].search([('key','=','dynamic_snippets_builder.' + template_id)])
         snippet_view = self.env['ir.ui.view'].create({
             'name': template_name,
@@ -81,11 +85,20 @@ class DynamicSnippetsBuilder(models.Model):
         template_id = '_'.join(self.name.lower().split(' ') + ['snippet_template', str(self.id)])
         # Create the inherited template representing the dynamic snippet builder in 'ir.ui.view'
         # Define the arch_db
+        if self.group_id.get_metadata()[0].get('xmlid'):
+            group_external_id = self.group_id.get_metadata()[0].get('xmlid')
+        else:
+            group_external_id = self.group_id.export_data(['id']).get('datas')[0][0]
+        print("group_id=",self.group_id.id)
+        print("group_name=",self.group_id.name)
+        print("group_external_id=",group_external_id)
+        print("group_availibilty_by_external_id=",self.env.user.has_group(group_external_id))
+        print("group_availibilty_by_id=",self.env.user.has_group(self.group_id.id))
         arch = '''<data id="dynamic_snippets_builder.%s" inherit_id="website.snippets" name="%s">
                             <xpath expr="//snippets[@id='snippet_groups']//t[@t-snippet][last()]" position="after">
                                  <t t-snippet="dynamic_snippets_builder.%s" t-if="request.env.user.has_group('%s')" string="%s" t-thumbnail="/dynamic_snippets_builder/static/dynamic/icon.png"/>
                             </xpath>
-                 </data>''' % (inherit_name, name, template_id, self.group_id.id, name)
+                 </data>''' % (inherit_name, name, template_id, group_external_id, name)
         inherited_view_id = self.env['ir.model.data'].search([('name', '=', "snippets"), ('module', '=', "website")],
                                                              limit=1).res_id
         view_created = self.env['ir.ui.view'].create({
@@ -110,34 +123,35 @@ class DynamicSnippetsBuilder(models.Model):
     '''
     @api.onchange('name')
     def on_change_view_snippet_template(self):
-        print(self._origin.name)
         if self.name and self._origin.name:
             origin_template_id = '_'.join(self._origin.name.lower().split(' ') + ['snippet_template', str(self._origin.id)])
             template_id = '_'.join(self.name.lower().split(' ') + ['snippet_template', str(self._origin.id)])
-            # origin_template_name = ' '.join(['Snippet builder ', self._origin.name.lower(), str(self._origin.id)])
             template_name = ' '.join(['Snippet builder ', self.name.lower(), str(self._origin.id)])
             origin_inherit_name = '_'.join(self._origin.name.lower().split(' ') + ['inherit_snippet', str(self._origin.id)])
             inherit_name = '_'.join(self.name.lower().split(' ') + ['inherit_snippet', str(self._origin.id)])
-            # origin_name = 'Snippet builder ' + self._origin.name.lower()
             name = 'Snippet builder ' + self.name.lower()
+            if self.group_id.get_metadata()[0].get('xmlid'):
+                group_external_id = self.group_id.get_metadata()[0].get('xmlid')
+            else:
+                group_external_id = self.group_id.export_data(['id']).get('datas')[0][0]
             if self.theme == 'card':
-                arch = '''<t t-name="dynamic_snippets_builder.%s" name="%s">
+                arch = '''<t t-name="dynamic_snippets_builder.%s" name="%s" t-if="request.env.user.has_group('%s')">
                                     <section class="pt40 pb40 %s">
                                         <div class="container template %s">
                                             <h1 class="text-center" t-out='id'> %s </h1>
                                         </div>
                                         <div class="dynamic_snippet_card"/>
                                     </section>
-                                  </t>''' % (template_id, template_id, template_id, template_id, self.model_id.name)
+                                  </t>''' % (template_id, template_id, group_external_id, template_id, template_id, self.model_id.name)
             else :
-                arch = '''<t t-name="dynamic_snippets_builder.%s" name="%s">
+                arch = '''<t t-name="dynamic_snippets_builder.%s" name="%s" t-if="request.env.user.has_group('%s')">
                                     <section class="pt40 pb40 %s">
                                         <div class="container template %s">
                                             <h1 class="text-center" t-out='id'> %s </h1>
                                         </div>
                                         <div class="dynamic_snippet_table"/>
                                     </section>
-                                  </t>''' % (template_id, template_id, template_id, template_id, self.model_id.name)
+                                  </t>''' % (template_id, template_id, group_external_id,  template_id, template_id, self.model_id.name)
             snippet_view_created_id = self.env['ir.ui.view'].search([('key', '=', 'dynamic_snippets_builder.' + origin_template_id)])
             if snippet_view_created_id:
                 snippet_view_created_id.write({
@@ -159,7 +173,7 @@ class DynamicSnippetsBuilder(models.Model):
                                                     <xpath expr="//snippets[@id='snippet_groups']//t[@t-snippet][last()]" position="after">
                                                          <t t-snippet="dynamic_snippets_builder.%s" t-if="request.env.user.has_group('%s')" string="%s" t-thumbnail="/dynamic_snippets_builder/static/dynamic/icon.png"/>
                                                     </xpath>
-                                         </data>''' % (inherit_name, name, template_id, self.group_id.id, name)
+                                         </data>''' % (inherit_name, name, template_id, group_external_id, name)
 
             inherited_view_id = self.env['ir.model.data'].search(
                 [('name', '=', "snippets"), ('module', '=', "website")],

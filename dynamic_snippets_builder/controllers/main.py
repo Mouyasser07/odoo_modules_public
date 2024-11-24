@@ -17,7 +17,7 @@ class DynamicSnippets(http.Controller):
             'dynamic.snippet.builder'].sudo().browse(dynamic_snippet_builder_id)
         if not dynamic_snippet_id:
             return data
-        print("group = ", request.env.user.has_group(dynamic_snippet_id.group_id.id))
+        # print("group = ", request.env.user.has_group(dynamic_snippet_id.group_id.get_metadata()[0].get('xmlid')))
         fields = []
         relational_fields =[]
         if dynamic_snippet_id.field_ids:
@@ -34,6 +34,9 @@ class DynamicSnippets(http.Controller):
             for d in data:
                 for f in relational_fields:
                     if d[f[0]]:
-                        names = request.env[f[1]].browse(d[f[0]]).mapped(lambda x: x.name if 'name' in request.env[f[1]]._fields else x.display_name)
+                        if type(d[f[0]])!= tuple:
+                            names = request.env[f[1]].browse(d[f[0]]).mapped(lambda x: x.name if 'name' in request.env[f[1]]._fields else x.display_name)
+                        else:
+                            names = d[f[0]][1]
                         d[f[0]] = names
         return data
